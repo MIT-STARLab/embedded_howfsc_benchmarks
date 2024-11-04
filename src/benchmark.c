@@ -1,10 +1,7 @@
-//Nick Belsten
-//Goal to do
-//mtimesv
-//mtimesm
-//QR decomp
-//Solve linear system
+//Nick Belsten for MIT STAR Lab APRA project
 
+
+//The below directives can be defined in the makefile to configure the benchmark choice
 //#define ENABLE_MATRIX_VECTOR_BENCHMARK
 //#define ENABLE_FFT_BENCHMARK
 //#define ENABLE_FFT2D_BENCHMARK
@@ -30,18 +27,6 @@
 #include "nr.h"
 #include "nrutil.h"
 #include "my_math_utils.h"
-
-// below are now in the makefile
-// #include "../../math_utils/nr.h"
-// #include "../../math_utils/nrutil.h"
-// #include "../../math_utils/nrutil.c"
-// #include "../../math_utils/matmul.c"
-// #include "../../math_utils/mvmul.c"
-// #include "../../math_utils/four1.c"
-// #include "../../math_utils/fourn.c"
-// #include "../../math_utils/qrdcmp.c"
-// #include "../../math_utils/qrsolv.c"
-
 
 
 
@@ -461,7 +446,7 @@ double time_ATA(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 5;
+    int reps = 1;
     int i;
     for (i = 0; i < reps; i++) {
         computeATA(result,A,rows,cols);
@@ -489,7 +474,7 @@ double time_dATA(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 5;
+    int reps = 1;
     int i;
     for (i = 0; i < reps; i++) {
         dcomputeATA(result,A,rows,cols);
@@ -517,7 +502,7 @@ double time_iATA(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 5;
+    int reps = 1;
     int i;
     for (i = 0; i < reps; i++) {
         icomputeATA(result,A,rows,cols);
@@ -970,7 +955,7 @@ int main() {
 
         // Write the results to the CSV file
         fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
-        
+        fflush(csv_file);
     }
 
 #endif
@@ -987,6 +972,7 @@ int main() {
 
         // Write the results to the CSV file
         fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
+        fflush(csv_file);
     }
 
 #endif
@@ -1004,7 +990,6 @@ int main() {
         fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
         //fprintf(csv_file, "%d,%.6f\n", i, float_rep_time);
         fflush(csv_file);
-
     }
 
 #endif
@@ -1036,6 +1021,7 @@ int main() {
         //int_rep_time = time_iATA(i);
         // Write the results to the CSV file
         fprintf(csv_file, "%d,%.6f\n", i, float_rep_time);
+        fflush(csv_file);
     }
 
 #endif
@@ -1051,7 +1037,7 @@ int main() {
         int_rep_time = time_iqrdcmp(i);
         // Write the results to the CSV file
         fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
-
+        fflush(csv_file);
     }
 
 #endif
@@ -1067,7 +1053,7 @@ int main() {
         int_rep_time = time_iqrsolv(i);
         // Write the results to the CSV file
         fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
-
+        fflush(csv_file);
     }
 
 #endif
@@ -1083,7 +1069,7 @@ int main() {
         int_rep_time = time_iqrinv(i);
         // Write the results to the CSV file
         fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
-
+        fflush(csv_file);
     }
 
 #endif
