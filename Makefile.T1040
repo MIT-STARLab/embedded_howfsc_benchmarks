@@ -1,0 +1,58 @@
+# Makefile.T1040
+
+# Define the absolute path to the math_utils directory
+MATH_UTILS_DIR := /home/apra/Projects/embedded_math_utils
+
+# Define MATH_UTILS using the absolute path
+MATH_UTILS := $(MATH_UTILS_DIR)/four1.c $(MATH_UTILS_DIR)/fourn.c \
+              $(MATH_UTILS_DIR)/matinv.c $(MATH_UTILS_DIR)/matmul.c $(MATH_UTILS_DIR)/mvmul.c \
+              $(MATH_UTILS_DIR)/nrutil.c $(MATH_UTILS_DIR)/qrdcmp.c $(MATH_UTILS_DIR)/qrsolv.c
+
+CFLAGS = -I./src -I$(MATH_UTILS_DIR)
+
+CC = powerpc-fsl-linux-gcc
+
+CFLAGS += -m32 -mhard-float -mcpu=e5500 --sysroot=/opt/fsl-qoriq/2.0/sysroots/ppce5500-fsl-linux \
+         -I.. -lrt -lm -std=c99
+
+# Benchmark options defined here, to avoid hardcoding in C files
+# Uncomment as needed for different benchmarks
+# CFLAGS += -DENABLE_MATRIX_VECTOR_BENCHMARK
+# CFLAGS += -DENABLE_FFT_BENCHMARK
+# CFLAGS += -DENABLE_FFT2D_BENCHMARK
+CFLAGS += -DENABLE_MATRIX_MATRIX_BENCHMARK
+# CFLAGS += -DENABLE_OTHER_MATRIX_MATRIX_BENCHMARK
+# CFLAGS += -DENABLE_QR_DCMP_BENCHMARK
+# CFLAGS += -DENABLE_QR_SOLVE_BENCHMARK
+# CFLAGS += -DENABLE_QR_INV_BENCHMARK
+
+# Source files
+SRC = ./src/benchmark.c
+
+TARGET = ./bin/T1040_benchmark
+
+
+# Create object files for all sources in the obj directory
+OBJ = $(patsubst src/%.c, obj/%.o, $(SRC)) $(patsubst $(MATH_UTILS_DIR)/%.c, obj/%.o, $(MATH_UTILS))
+
+# Build the target
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lm
+
+# Compile each .c file from src into .o in obj directory
+obj/%.o: src/%.c
+	@mkdir -p obj
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile each .c file from MATH_UTILS_DIR into .o in obj directory
+obj/%.o: $(MATH_UTILS_DIR)/%.c
+	@mkdir -p obj
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Clean up only object files (keep the binary)
+clean:
+	rm -f obj/*.o
+
+# Clean up both object files and the binary
+clean_all:
+	rm -f obj/*.o $(TARGET)

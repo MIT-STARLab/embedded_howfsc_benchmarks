@@ -1,0 +1,13 @@
+# Ignore all test results and build outputs
+bin/
+obj/
+src/*.o
+src/*.out
+*.csv
+
+# Ignore temporary and log files
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
