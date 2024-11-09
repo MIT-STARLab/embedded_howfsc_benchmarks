@@ -11,13 +11,14 @@ MATH_UTILS := $(MATH_UTILS_DIR)/four1.c $(MATH_UTILS_DIR)/fourn.c \
 CFLAGS = -I./src -I$(MATH_UTILS_DIR)
 
 CC = gcc
-CFLAGS += -lrt -lm -std=c99
+CFLAGS += -lrt -lm -std=c99 -Ofast
 
 # Benchmark options defined here, to avoid hardcoding in C files
 # Uncomment as needed for different benchmarks
 # CFLAGS += -DENABLE_MATRIX_VECTOR_BENCHMARK
 # CFLAGS += -DENABLE_FFT_BENCHMARK
-CFLAGS += -DENABLE_FFT2D_BENCHMARK
+# CFLAGS += -DENABLE_FFT2D_BENCHMARK
+CFLAGS += -DENABLE_GEMM_BENCHMARK
 # CFLAGS += -DENABLE_MATRIX_MATRIX_BENCHMARK
 # CFLAGS += -DENABLE_OTHER_MATRIX_MATRIX_BENCHMARK
 # CFLAGS += -DENABLE_QR_DCMP_BENCHMARK

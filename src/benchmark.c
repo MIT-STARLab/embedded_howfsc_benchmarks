@@ -28,6 +28,29 @@
 #include "nrutil.h"
 #include "my_math_utils.h"
 
+/**
+ * Prints a 2D array of doubles stored in a pointer-to-pointer based structure.
+ *
+ * @param arr Pointer to the first element of an array of pointers to doubles.
+ * @param rows The number of rows in the array.
+ * @param cols The number of columns in each row of the array.
+ */
+void print_double_array(double** arr, int rows, int cols) {
+    if (arr == NULL) {
+        printf("The array pointer is NULL.\n");
+        return;
+    }
+    for (int i = 1; i <= rows; i++) {
+        if (arr[i] == NULL) {
+            printf("Row %d is NULL.\n", i);
+            continue;
+        }
+        for (int j = 1; j <= cols; j++) {
+            printf("%f ", arr[i][j]);
+        }
+        printf("\n");
+    }
+}
 
 
 double time_print(const struct timespec* start, const struct timespec* end,long repeats) {
@@ -64,10 +87,11 @@ void initializedMatrix(double **matrix, long nrl, long nrh, long ncl, long nch) 
     // Seed the random number generator
     srand((unsigned int)time(NULL));
 
-    for (i = nrl; i < nrh; i++) {
-        for (j = ncl; j < nch; j++) {
+    for (i = nrl; i <= nrh; i++) {
+        for (j = ncl; j <= nch; j++) {
             // Generate a random float between 0 and 1
-            matrix[i][j] = (double)rand() / RAND_MAX;
+            //matrix[i][j] = (double)rand() / RAND_MAX;
+            matrix[i][j] = (double)(i+j);
         }
     }
 }
@@ -337,7 +361,7 @@ double time_fft2D(long N) //N is the number of complex values along one dimensio
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 30;
+    int reps = 10;
     int i;
     for (i = 0; i < reps; i++) {
         fourn(data1,nn,NDIM,isign); 
@@ -378,7 +402,7 @@ double time_dfft2D(long N){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 30;
+    int reps = 10;
     int i;
     for (i = 0; i < reps; i++) {
         dfour1(data1,N,1);
@@ -407,7 +431,7 @@ double time_ifft2D(long data_length){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 30;
+    int reps = 10;
     int i;
     for (i = 0; i < reps; i++) {
         ifour1(myVector,data_length,1);
@@ -419,6 +443,65 @@ double time_ifft2D(long data_length){
     free_ivector(myVector,1,data_length*2);
 
     return elapsed_seconds;
+}
+
+/**************************************************************
+ * ************************************************************
+ * ********************  GEMM TIMING CODE  ********************
+ * ************************************************************
+ * ************************************************************
+*/
+
+double time_dmatmul(long size) {
+    printf("Representation double\n");
+
+    // Set matrix dimensions
+    long rows = size;
+    long cols = size;
+
+    // Allocate memory for matrices
+    double **A = dmatrix(1, rows, 1, cols);
+    double **B = dmatrix(1, cols, 1, cols);
+    double **C = dmatrix(1, rows, 1, cols);
+    double **C1 = dmatrix(1, rows, 1, cols);
+
+    // Initialize matrices with random values
+    initializedMatrix(A, 1, rows, 1, cols);
+    initializedMatrix(B, 1, cols, 1, cols);
+
+    struct timespec start, stop;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    int reps = 1;
+    for (int i = 0; i < reps; i++) {
+        recursive_dmatmul_non_square(C, A, B, rows, cols, cols, 1);
+    }
+
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    time_print(&start, &stop, reps);
+
+    //CORRECTNESS CHECK
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    for (int i = 0; i < reps; i++) {
+        dmatmul(C1, A, B, rows, cols, cols);
+    }
+
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    printf("Time for iterative method\n");
+    time_print(&start, &stop, reps);
+
+    if(dmat_approx_equal(C,C1,rows,cols,1e-3)){
+        printf("Matrices equal\n");
+    }else{printf("Matrices not equal\n");}
+
+    // Free allocated memory
+    free_dmatrix(A, 1, rows, 1, cols);
+    free_dmatrix(B, 1, cols, 1, cols);
+    free_dmatrix(C, 1, rows, 1, cols);
+    free_dmatrix(C1, 1, rows, 1, cols);
+
+    return 0;
 }
 
 
@@ -946,6 +1029,8 @@ int main() {
 
 #ifdef ENABLE_MATRIX_VECTOR_BENCHMARK
     printf("Starting Matrix Vector Benchmark\n");
+    fprintf(csv_file,"Matrix Vector Benchmark\n");
+
     for (i = 128; i <= 8192; i = i * 2) {
         printf("Number of Columns = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
@@ -962,6 +1047,7 @@ int main() {
 
 #ifdef ENABLE_FFT_BENCHMARK
     printf("Starting 1D FFT Benchmark\n");
+    fprintf(csv_file,"1D FFT Benchmark\n");
 
     for (i = 1024; i <= 1024*16; i = i * 2) {
         printf("Number of Elements = %d\n", i);
@@ -979,6 +1065,8 @@ int main() {
 
 #ifdef ENABLE_FFT2D_BENCHMARK
     printf("Starting 2D FFT Benchmark\n");
+    fprintf(csv_file,"2D FFT Benchmark\n");
+
     for (i = 128; i <= 8192; i = i * 2) {
         printf("Number of Elements = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
@@ -996,6 +1084,7 @@ int main() {
 
 #ifdef ENABLE_MATRIX_MATRIX_BENCHMARK
     printf("Starting Matrix Matrix (ATA) Benchmark\n");
+    fprintf(csv_file,"Matrix Matrix (ATA) Benchmark\n");
 
     for(i=128;i<=128*16;i=i*2){
         printf("Number of Columns = %d\n", i);
@@ -1010,8 +1099,27 @@ int main() {
 
 #endif
 
+#ifdef ENABLE_GEMM_BENCHMARK
+    printf("Starting GEMM Benchmark\n");
+    fprintf(csv_file,"GEMM Inversion Benchmark\n");
+
+    for(i=128;i<=128*16;i=i*2){
+        printf("n = %d\n", i);
+        double float_rep_time, double_rep_time, int_rep_time;
+        //float_rep_time = time_qrinv(i);
+        double_rep_time = time_dmatmul(i);
+        //int_rep_time = time_iqrinv(i);
+        // Write the results to the CSV file
+        //fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
+        fprintf(csv_file, "%d,%.6f\n", i, double_rep_time);
+        fflush(csv_file);
+    }
+
+#endif
+
 #ifdef ENABLE_OTHER_MATRIX_MATRIX_BENCHMARK
     printf("Starting other Matrix Matrix (ATA) Benchmark\n");
+    fprintf(csv_file,"Other Matrix Matrix (ATA) Benchmark\n");
 
     for(i=128;i<=128*16;i=i*2){
         printf("Number of Columns = %d\n", i);
@@ -1028,6 +1136,7 @@ int main() {
 
 #ifdef ENABLE_QR_DCMP_BENCHMARK
     printf("Starting QR DCMP Benchmark\n");
+    fprintf(csv_file,"QR DCMP Benchmark\n");
 
     for(i=128;i<=128*16;i=i*2){
         printf("n = %d\n", i);
@@ -1044,6 +1153,7 @@ int main() {
 
 #ifdef ENABLE_QR_SOLVE_BENCHMARK
     printf("Starting QR Solve Benchmark\n");
+    fprintf(csv_file,"QR Solve Benchmark\n");
 
     for(i=128;i<=128*16;i=i*2){
         printf("n = %d\n", i);
@@ -1060,6 +1170,7 @@ int main() {
 
 #ifdef ENABLE_QR_INV_BENCHMARK
     printf("Starting QR Inversion Benchmark\n");
+    fprintf(csv_file,"QR Inversion Benchmark\n");
 
     for(i=128;i<=128*16;i=i*2){
         printf("n = %d\n", i);
