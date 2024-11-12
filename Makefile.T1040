@@ -13,16 +13,17 @@ CFLAGS = -I./src -I$(MATH_UTILS_DIR)
 CC = powerpc-fsl-linux-gcc
 
 CFLAGS += -m32 -mhard-float -mcpu=e5500 --sysroot=/opt/fsl-qoriq/2.0/sysroots/ppce5500-fsl-linux \
-         -I.. -lrt -lm -std=c99 -Ofast -funroll-loops -ftree-vectorize -fopenmp
+          -I.. -lrt -lm -std=c99 -Ofast -funroll-loops -ftree-vectorize -ffast-math
 
-CFLAGE += -I/opt/fsl-qoriq/2.0/sysroots/ppce5500-fsl-linux/usr/lib/gcc/powerpc-fsl-linux/4.9.2/include
+CFLAGS += -fopenmp -I/opt/fsl-qoriq/2.0/sysroots/ppce5500-fsl-linux/usr/lib/gcc/powerpc-fsl-linux/4.9.2/include
 
 # Benchmark options defined here, to avoid hardcoding in C files
 # Uncomment as needed for different benchmarks
 # CFLAGS += -DENABLE_MATRIX_VECTOR_BENCHMARK
 # CFLAGS += -DENABLE_FFT_BENCHMARK
 # CFLAGS += -DENABLE_FFT2D_BENCHMARK
-CFLAGS += -DENABLE_GEMM_BENCHMARK
+# CFLAGS += -DENABLE_GEMM_BENCHMARK
+CFLAGS += -DENABLE_CGEMM_BENCHMARK
 # CFLAGS += -DENABLE_MATRIX_MATRIX_BENCHMARK
 # CFLAGS += -DENABLE_OTHER_MATRIX_MATRIX_BENCHMARK
 # CFLAGS += -DENABLE_QR_DCMP_BENCHMARK
@@ -40,7 +41,7 @@ OBJ = $(patsubst src/%.c, obj/%.o, $(SRC)) $(patsubst $(MATH_UTILS_DIR)/%.c, obj
 
 # Build the target
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lm
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -L/opt/fsl-qoriq/2.0/sysroots/ppce5500-fsl-linux/usr/lib -Wl,-Bstatic -lgomp -Wl,-Bdynamic -lm
 
 # Compile each .c file from src into .o in obj directory
 obj/%.o: src/%.c

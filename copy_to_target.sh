@@ -3,6 +3,8 @@
 # Constants
 TARGET_IP="169.254.198.2"
 REMOTE_PATH="~/benchmark/"
+LIBRARY_FILE="/opt/fsl-qoriq/2.0/sysroots/ppce5500-fsl-linux/usr/lib/libgomp.so.1"
+REMOTE_LIB_PATH="/usr/lib/"
 
 # Check if the user has provided the target name
 if [ -z "$1" ]; then
@@ -36,4 +38,17 @@ if [ $? -eq 0 ]; then
   echo "Files successfully copied to $TARGET_IP:$REMOTE_PATH"
 else
   echo "Error during file transfer."
+fi
+
+
+# Copy the libgomp.so.1 library file to the remote target's library path
+echo "Copying $LIBRARY_FILE to $TARGET_IP:$REMOTE_LIB_PATH"
+scp "$LIBRARY_FILE" root@$TARGET_IP:"$REMOTE_LIB_PATH"
+
+# Check if the library file transfer was successful
+if [ $? -eq 0 ]; then
+  echo "Library file successfully copied to $TARGET_IP:$REMOTE_LIB_PATH"
+else
+  echo "Error during library file transfer."
+  exit 1
 fi

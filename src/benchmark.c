@@ -28,6 +28,20 @@
 #include "nrutil.h"
 #include "my_math_utils.h"
 
+//Here we requires one based indexing
+void print_row_major_complex(double arr[], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            printf("(%e+%ej)", arr[(i*cols + j)*2 + 1], arr[(i*cols + j)*2 + 2]);
+            if (j < (cols - 1)) {
+                printf(", ");
+            }
+        }
+        printf("\n");
+    }
+}
+
+
 /**
  * Prints a 2D array of doubles stored in a pointer-to-pointer based structure.
  *
@@ -474,7 +488,7 @@ double time_dmatmul(long size) {
 
     int reps = 1;
     for (int i = 0; i < reps; i++) {
-        recursive_dmatmul_non_square(C, A, B, rows, cols, cols, 1);
+        dmatmul(C, A, B, rows, cols, cols);
     }
 
     clock_gettime(CLOCK_MONOTONIC, &stop);
@@ -484,7 +498,7 @@ double time_dmatmul(long size) {
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     for (int i = 0; i < reps; i++) {
-        dmatmul(C1, A, B, rows, cols, cols);
+        sequential_dmatmul(C1, A, B, rows, cols, cols);
     }
 
     clock_gettime(CLOCK_MONOTONIC, &stop);
@@ -504,6 +518,75 @@ double time_dmatmul(long size) {
     return 0;
 }
 
+
+/**************************************************************
+ * ************************************************************
+ * ********************  CGEMM TIMING CODE  *******************
+ * ************************************************************
+ * ************************************************************
+*/
+
+double time_complex_dmatmul(long size) {
+    printf("Representation double\n");
+
+    // Set matrix dimensions
+    long rows = size;
+    long cols = size;
+
+    // Allocate memory for matrices
+    double *A = dvector(1, 2*rows*cols);
+    double *B = dvector(1, 2*rows*cols);
+    double *C = dvector(1, 2*rows*cols);
+    double *C1 = dvector(1, 2*rows*cols);
+
+    // Initialize matrices with random values
+    initializedMatrix(&A, 0, 0, 1, 2*rows*cols);
+    initializedMatrix(&B, 0, 0, 1, 2*rows*cols);
+
+    struct timespec start, stop;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    int reps = 1;
+    for (int i = 0; i < reps; i++) {
+        complex_dmatmul(C, A, B, rows, cols, cols);
+    }
+
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    time_print(&start, &stop, reps);
+
+    //CORRECTNESS CHECK
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    for (int i = 0; i < reps; i++) {
+        sequential_complex_dmatmul(C1, A, B, rows, cols, cols);
+    }
+
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    printf("Time for iterative method\n");
+    time_print(&start, &stop, reps);
+
+    // printf("A\n");
+    // print_row_major_complex(A,rows,cols);
+    // printf("B\n");
+    // print_row_major_complex(B,rows,cols);
+    // printf("C\n");
+    // print_row_major_complex(C,rows,cols);
+    // printf("C1\n");
+    // print_row_major_complex(C1,rows,cols);
+
+
+    if(complex_dmat_approx_equal(C,C1,rows,cols,1e-3)){
+        printf("Matrices equal\n");
+    }else{printf("Matrices not equal\n");}
+
+    // Free allocated memory
+    free_dvector(A, 1, 2*rows*cols);
+    free_dvector(B, 1, 2*rows*cols);
+    free_dvector(C, 1, 2*rows*cols);
+    free_dvector(C1,1, 2*rows*cols);
+
+    return 0;
+}
 
 
 /**************************************************************
@@ -1101,13 +1184,31 @@ int main() {
 
 #ifdef ENABLE_GEMM_BENCHMARK
     printf("Starting GEMM Benchmark\n");
-    fprintf(csv_file,"GEMM Inversion Benchmark\n");
+    fprintf(csv_file,"GEMM Benchmark\n");
 
     for(i=128;i<=128*16;i=i*2){
         printf("n = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
         //float_rep_time = time_qrinv(i);
         double_rep_time = time_dmatmul(i);
+        //int_rep_time = time_iqrinv(i);
+        // Write the results to the CSV file
+        //fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
+        fprintf(csv_file, "%d,%.6f\n", i, double_rep_time);
+        fflush(csv_file);
+    }
+
+#endif
+
+#ifdef ENABLE_CGEMM_BENCHMARK
+    printf("Starting CGEMM Benchmark\n");
+    fprintf(csv_file,"CGEMM Benchmark\n");
+
+    for(i=128;i<=128*16;i=i*2){
+        printf("n = %d\n", i);
+        double float_rep_time, double_rep_time, int_rep_time;
+        //float_rep_time = time_qrinv(i);
+        double_rep_time = time_complex_dmatmul(i);
         //int_rep_time = time_iqrinv(i);
         // Write the results to the CSV file
         //fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
