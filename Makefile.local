@@ -1,7 +1,7 @@
 # Makefile.local
 
 # Define the absolute path to the math_utils directory
-MATH_UTILS_DIR := /home/apra/Projects/embedded_math_utils
+MATH_UTILS_DIR := $(HOME)/Projects/embedded_howfsc_math_utils
 
 # Define MATH_UTILS using the absolute path
 MATH_UTILS := $(MATH_UTILS_DIR)/four1.c $(MATH_UTILS_DIR)/fourn.c \
