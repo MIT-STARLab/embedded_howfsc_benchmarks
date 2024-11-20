@@ -1,16 +1,6 @@
 //Nick Belsten for MIT STAR Lab APRA project
 
 
-//The below directives can be defined in the makefile to configure the benchmark choice
-//#define ENABLE_MATRIX_VECTOR_BENCHMARK
-//#define ENABLE_FFT_BENCHMARK
-//#define ENABLE_FFT2D_BENCHMARK
-//#define ENABLE_MATRIX_MATRIX_BENCHMARK
-//#define ENABLE_OTHER_MATRIX_MATRIX_BENCHMARK
-//#define ENABLE_QR_DCMP_BENCHMARK
-//#define ENABLE_QR_SOLVE_BENCHMARK
-//#define ENABLE_QR_INV_BENCHMARK
-
 #if __STDC_VERSION__ >= 199901L // to use POSIX standards with corresponding C version
 #define _XOPEN_SOURCE 600
 #else
@@ -101,11 +91,12 @@ void initializedMatrix(double **matrix, long nrl, long nrh, long ncl, long nch) 
     // Seed the random number generator
     srand((unsigned int)time(NULL));
 
+    int k=0;
     for (i = nrl; i <= nrh; i++) {
         for (j = ncl; j <= nch; j++) {
             // Generate a random float between 0 and 1
             //matrix[i][j] = (double)rand() / RAND_MAX;
-            matrix[i][j] = (double)(i+j);
+            matrix[i][j] = (double)(k); k++;
         }
     }
 }
@@ -116,7 +107,7 @@ void initializeiMatrix(int **matrix, long nrl, long nrh, long ncl, long nch) {
     // Seed the random number generator
     srand((unsigned int)time(NULL));
 
-    for (i = nrl; i < nrh; i++) {
+    for (i = nrl; i <= nrh; i++) {
         for (j = ncl; j < nch; j++) {
             // Generate a random int
             matrix[i][j] = (int)rand();
@@ -130,7 +121,7 @@ void initializeMatrix(float **matrix, long nrl, long nrh, long ncl, long nch) {
     // Seed the random number generator
     srand((unsigned int)time(NULL));
 
-    for (i = nrl; i < nrh; i++) {
+    for (i = nrl; i <= nrh; i++) {
         for (j = ncl; j < nch; j++) {
             // Generate a random float between 0 and 1
             matrix[i][j] = (float)rand() / RAND_MAX;
@@ -144,6 +135,77 @@ void initializeMatrix(float **matrix, long nrl, long nrh, long ncl, long nch) {
  * ************************************************************
  * ************************************************************
 */
+
+double compare_dmvmult(long cols){
+    long rows = cols*20;
+    /************************* Double ****************************/
+    printf("Representation double\n");
+
+    // Allocate memory for the matrix
+    double **myMatrix = dmatrix(1, rows, 1, cols);
+    double *myVector = dvector(1, cols);
+    double **result = dmatrix(1,rows,1,1);
+    double *result1 = dvector(1,rows);
+
+    double **vec_mat;
+
+
+    int reps = 5;
+    int i;
+    double elapsed_seconds;
+
+    // Initialize the matrix with random values
+    initializedMatrix(myMatrix, 1, rows, 1, cols);
+
+    initializedMatrix(&myVector,0,0,1,cols);
+
+    get_column_dmatrix_from_dvector(vec_mat,myVector, cols);
+
+    printf("Initialized\n");
+    print_double_array(vec_mat,cols,1);
+
+    struct timespec start, stop;
+
+    //Sequential
+    printf("Tiled implementation\n");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    for (i = 0; i < reps; i++) {
+        dmatmul(result,myMatrix,vec_mat,rows,cols,1);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    elapsed_seconds = time_print(&start,&stop,reps);
+    
+    
+    //Sequential
+    printf("Sequential implementation\n");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+
+    for (i = 0; i < reps; i++) {
+        dmvmul(result1,myMatrix,myVector,rows,cols);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    elapsed_seconds = time_print(&start,&stop,reps);
+
+    double ** result1_mat;
+    get_column_dmatrix_from_dvector(result1_mat,result1, rows);
+
+    if (!dmat_approx_equal(result,result1_mat,cols,1,1e-3)){printf("MV mult results not equal\n");}
+
+    // Remember to free the allocated memory when done
+    free_dmatrix(myMatrix,1,rows,1,cols);
+    free_dvector(myVector,1,cols);
+    
+    free_dmatrix(vec_mat,1,cols,1,1);
+    free_dmatrix(result,1,rows,1,1);
+
+    free_dvector(result1,1,rows);
+
+    free_dmatrix(result1_mat,1,rows,1,1);
+
+    return elapsed_seconds;
+}
 
 double time_mvmult(long cols){
     long rows = cols*20;
@@ -159,7 +221,7 @@ double time_mvmult(long cols){
     // Initialize the matrix with random values
     initializeMatrix(myMatrix, 1, rows, 1, cols);
 
-    initializeMatrix(&myVector,0,1,1,cols);
+    initializeMatrix(&myVector,0,0,1,cols);
 
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -193,7 +255,7 @@ double time_dmvmult(long cols){
     // Initialize the matrix with random values
     initializedMatrix(myMatrix, 1, rows, 1, cols);
 
-    initializedMatrix(&myVector,0,1,1,cols);
+    initializedMatrix(&myVector,0,0,1,cols);
 
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -227,7 +289,7 @@ double time_imvmult(long cols){
     // Initialize the matrix with random values
     initializeiMatrix(myMatrix, 1, rows, 1, cols);
 
-    initializeiMatrix(&myVector,0,1,1,cols);
+    initializeiMatrix(&myVector,0,0,1,cols);
 
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -596,34 +658,94 @@ double time_complex_dmatmul(long size) {
  * ************************************************************
 */
 
-double time_ATA(long cols){
-    /************************* float ****************************/
-    printf("Representation float\n");
-    long rows = cols*20;
+double compare_ata(long rows, long cols) {
+    /************************* Double ****************************/
+    printf("Representation double\n");
 
     // Allocate memory for the matrix
-    float **A = matrix(1, rows, 1, cols);
-    float **result = matrix(1, cols, 1, cols);
+    double **A = dmatrix(1, rows, 1, cols);
+    double **result_tiled = dmatrix(1, cols, 1, cols);
+    double **result_sequential = dmatrix(1, cols, 1, cols);
 
     // Initialize the matrix with random values
-    initializeMatrix(A, 1, rows, 1, cols);
+    initializedMatrix(A, 1, rows, 1, cols);
+
+    // print_double_array(A,rows,cols);
 
 
-    struct timespec start, stop;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    printf("Initialized matrix A\n");
 
     int reps = 1;
-    int i;
-    for (i = 0; i < reps; i++) {
-        computeATA(result,A,rows,cols);
+    struct timespec start, stop;
+    double elapsed_seconds;
+
+    // Tiled implementation
+    printf("Tiled implementation\n");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (int i = 0; i < reps; i++) {
+        dcompute_ata(result_tiled, A, rows, cols);
     }
     clock_gettime(CLOCK_MONOTONIC, &stop);
-    time_print(&start,&stop,reps);
+    elapsed_seconds = time_print(&start, &stop, reps);
+    printf("Tiled elapsed time: %lf seconds\n", elapsed_seconds);
 
-    // Remember to free the allocated memory when done
-    free_matrix(A,1,rows,1,cols);
-    free_matrix(result,1,cols,1,cols);
+    // Sequential implementation
+    printf("Sequential implementation\n");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (int i = 0; i < reps; i++) {
+        dcomputeATA_sequential(result_sequential, A, rows, cols);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    elapsed_seconds = time_print(&start, &stop, reps);
+    printf("Sequential elapsed time: %lf seconds\n", elapsed_seconds);
+
+    // Compare the results
+    if (!dmat_approx_equal(result_tiled, result_sequential, cols, cols, 1e-3)) {
+        printf("ATA results are not equal\n");
+    } else {
+        printf("ATA results are equal\n");
+    }
+
+    //print_double_array(result_sequential,cols,cols);
+    //print_double_array(result_tiled,cols,cols);
+
+    // Free allocated memory
+    free_dmatrix(A, 1, rows, 1, cols);
+    free_dmatrix(result_tiled, 1, cols, 1, cols);
+    free_dmatrix(result_sequential, 1, cols, 1, cols);
+
+    return elapsed_seconds;
 }
+
+
+// double time_ATA(long cols){
+//     /************************* float ****************************/
+//     printf("Representation float\n");
+//     long rows = cols*20;
+
+//     // Allocate memory for the matrix
+//     float **A = matrix(1, rows, 1, cols);
+//     float **result = matrix(1, cols, 1, cols);
+
+//     // Initialize the matrix with random values
+//     initializeMatrix(A, 1, rows, 1, cols);
+
+
+//     struct timespec start, stop;
+//     clock_gettime(CLOCK_MONOTONIC, &start);
+
+//     int reps = 1;
+//     int i;
+//     for (i = 0; i < reps; i++) {
+//         //computeATA(result,A,rows,cols);
+//     }
+//     clock_gettime(CLOCK_MONOTONIC, &stop);
+//     time_print(&start,&stop,reps);
+
+//     // Remember to free the allocated memory when done
+//     free_matrix(A,1,rows,1,cols);
+//     free_matrix(result,1,cols,1,cols);
+// }
 
 double time_dATA(long cols){
     /************************* double ****************************/
@@ -643,7 +765,7 @@ double time_dATA(long cols){
     int reps = 1;
     int i;
     for (i = 0; i < reps; i++) {
-        dcomputeATA(result,A,rows,cols);
+        dcompute_ata(result,A,rows,cols);
     }
     clock_gettime(CLOCK_MONOTONIC, &stop);
     time_print(&start,&stop,reps);
@@ -653,33 +775,33 @@ double time_dATA(long cols){
     free_dmatrix(result,1,cols,1,cols);
 }
 
-double time_iATA(long cols){
-    /************************* int ****************************/
-    printf("Representation int\n");
-    long rows = cols*20;
+// double time_iATA(long cols){
+//     /************************* int ****************************/
+//     printf("Representation int\n");
+//     long rows = cols*20;
 
-    // Allocate memory for the matrix
-    int **A = imatrix(1, rows, 1, cols);
-    int **result = imatrix(1, cols, 1, cols);
+//     // Allocate memory for the matrix
+//     int **A = imatrix(1, rows, 1, cols);
+//     int **result = imatrix(1, cols, 1, cols);
 
-    // Initialize the matrix with random values
-    initializeiMatrix(A, 1, rows, 1, cols);
+//     // Initialize the matrix with random values
+//     initializeiMatrix(A, 1, rows, 1, cols);
 
-    struct timespec start, stop;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+//     struct timespec start, stop;
+//     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 1;
-    int i;
-    for (i = 0; i < reps; i++) {
-        icomputeATA(result,A,rows,cols);
-    }
-    clock_gettime(CLOCK_MONOTONIC, &stop);
-    time_print(&start,&stop,reps);
+//     int reps = 1;
+//     int i;
+//     for (i = 0; i < reps; i++) {
+//         icomputeATA(result,A,rows,cols);
+//     }
+//     clock_gettime(CLOCK_MONOTONIC, &stop);
+//     time_print(&start,&stop,reps);
 
-    // Remember to free the allocated memory when done
-    free_imatrix(A,1,rows,1,cols);
-    free_imatrix(result,1,cols,1,cols);
-}
+//     // Remember to free the allocated memory when done
+//     free_imatrix(A,1,rows,1,cols);
+//     free_imatrix(result,1,cols,1,cols);
+// }
 
 /**************************************************************
  * ************************************************************
@@ -1165,18 +1287,19 @@ int main() {
 
 #endif
 
-#ifdef ENABLE_MATRIX_MATRIX_BENCHMARK
+#ifdef ENABLE_ATA_BENCHMARK
     printf("Starting Matrix Matrix (ATA) Benchmark\n");
     fprintf(csv_file,"Matrix Matrix (ATA) Benchmark\n");
 
     for(i=128;i<=128*16;i=i*2){
         printf("Number of Columns = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
-        float_rep_time = time_ATA(i);
+        //float_rep_time = time_ATA(i);
         double_rep_time = time_dATA(i);
-        int_rep_time = time_iATA(i);
+        //int_rep_time = time_iATA(i);
         // Write the results to the CSV file
-        fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
+        fprintf(csv_file, "%d,%.6f\n", i,  double_rep_time);
+        //fprintf(csv_file, "%d,%.6f,%.6f,%.6f\n", i, float_rep_time, double_rep_time, int_rep_time);
         fflush(csv_file);
     }
 
@@ -1285,6 +1408,8 @@ int main() {
     }
 
 #endif
+    compare_dmvmult(1024);
+    //compare_ata(512*4,512);
 
     fclose(csv_file);
     printf("Benchmark results have been written to 'benchmark_results.csv'\n");
