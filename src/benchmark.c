@@ -869,7 +869,7 @@ double time_qrdcmp(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 30;
+    int reps = 1;
     int i;
     for (i = 0; i < reps; i++) {
         qrdcmp(a, n, c, d, &sing);
@@ -903,7 +903,7 @@ double time_dqrdcmp(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 30;
+    int reps = 1;
     int i;
     for (i = 0; i < reps; i++) {
         dqrdcmp(a, n, c, d, &sing);
@@ -937,7 +937,7 @@ double time_iqrdcmp(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 30;
+    int reps = 1;
     int i;
     for (i = 0; i < reps; i++) {
         iqrdcmp(a, n, c, d, &sing);
@@ -1362,7 +1362,7 @@ int main() {
     printf("Starting QR DCMP Benchmark\n");
     fprintf(csv_file,"QR DCMP Benchmark\n");
 
-    for(i=128;i<=128*16;i=i*2){
+    for(i=128;i<=128*32;i=i*2){
         printf("n = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
         float_rep_time = time_qrdcmp(i);
@@ -1408,7 +1408,7 @@ int main() {
     }
 
 #endif
-    compare_dmvmult(1024);
+    //compare_dmvmult(1024);
     //compare_ata(512*4,512);
 
     fclose(csv_file);
