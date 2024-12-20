@@ -405,7 +405,7 @@ double time_fft2D(long N) //N is the number of complex values along one dimensio
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 10;
+    int reps = 2;
     int i;
     for (i = 0; i < reps; i++) {
         fourn(data1,nn,NDIM,isign); 
@@ -445,7 +445,7 @@ double time_dfft2D(long N){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 10;
+    int reps = 2;
     int i;
     for (i = 0; i < reps; i++) {
         dfourn(data1,nn,NDIM,isign); 
