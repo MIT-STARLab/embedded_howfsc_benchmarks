@@ -1,4 +1,4 @@
-# Makefile.local
+# Makefile.T1040
 
 # Define the absolute path to the math_utils directory
 MATH_UTILS_DIR := $(HOME)/Projects/embedded_howfsc_math_utils
@@ -10,8 +10,13 @@ MATH_UTILS := $(MATH_UTILS_DIR)/four1.c $(MATH_UTILS_DIR)/fourn.c \
 
 CFLAGS = -I./src -I$(MATH_UTILS_DIR)
 
-CC = gcc
-CFLAGS += -lrt -std=c99 -Ofast -fopenmp -lgomp -lm
+CC = aarch64-fsl-linux-gcc
+
+ 
+CFLAGS += --sysroot=/opt/fsl-qoriq/2.0-aarch/sysroots/aarch64-fsl-linux \
+          -I.. -lrt -lm -std=c99 -Ofast -funroll-loops -ftree-vectorize -ffast-math
+
+CFLAGS += -fopenmp -I/opt/fsl-qoriq/2.0-aarch/sysroots/aarch64-fsl-linux/usr/lib/gcc/aarch64-fsl-linux/4.9.3/include
 
 # Benchmark options defined here, to avoid hardcoding in C files
 # Uncomment as needed for different benchmarks
@@ -19,6 +24,7 @@ CFLAGS += -lrt -std=c99 -Ofast -fopenmp -lgomp -lm
 # CFLAGS += -DENABLE_FFT_BENCHMARK
 # CFLAGS += -DENABLE_FFT2D_BENCHMARK
 # CFLAGS += -DENABLE_GEMM_BENCHMARK
+# CFLAGS += -DENABLE_CGEMM_BENCHMARK
 # CFLAGS += -DENABLE_ATA_BENCHMARK
 CFLAGS += -DENABLE_QR_DCMP_BENCHMARK
 # CFLAGS += -DENABLE_QR_SOLVE_BENCHMARK
@@ -27,14 +33,15 @@ CFLAGS += -DENABLE_QR_DCMP_BENCHMARK
 # Source files
 SRC = ./src/benchmark.c
 
-TARGET = ./bin/local_benchmark
+TARGET = ./bin/LS1046_benchmark
+
 
 # Create object files for all sources in the obj directory
 OBJ = $(patsubst src/%.c, obj/%.o, $(SRC)) $(patsubst $(MATH_UTILS_DIR)/%.c, obj/%.o, $(MATH_UTILS))
 
 # Build the target
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lm
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -L/opt/fsl-qoriq/2.0-aarch/sysroots/aarch64-fsl-linux/usr/lib -Wl,-Bstatic -lgomp -Wl,-Bdynamic -lm
 
 # Compile each .c file from src into .o in obj directory
 obj/%.o: src/%.c

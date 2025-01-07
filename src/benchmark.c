@@ -194,7 +194,7 @@ double time_mvmult(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 5;
+    int reps = 2;
     int i;
     for (i = 0; i < reps; i++) {
         mvmul(result,myMatrix,myVector,rows,cols);
@@ -228,7 +228,7 @@ double time_dmvmult(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 5;
+    int reps = 2;
     int i;
     for (i = 0; i < reps; i++) {
         dmvmul(result,myMatrix,myVector,rows,cols);
@@ -262,7 +262,7 @@ double time_imvmult(long cols){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 30;
+    int reps = 2;
     int i;
     for (i = 0; i < reps; i++) {
         imvmul(result,myMatrix,myVector,rows,cols);
@@ -405,7 +405,7 @@ double time_fft2D(long N) //N is the number of complex values along one dimensio
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 2;
+    int reps = 10;
     int i;
     for (i = 0; i < reps; i++) {
         fourn(data1,nn,NDIM,isign); 
@@ -445,7 +445,7 @@ double time_dfft2D(long N){
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 2;
+    int reps = 10;
     int i;
     for (i = 0; i < reps; i++) {
         dfourn(data1,nn,NDIM,isign); 
@@ -514,7 +514,7 @@ double time_dmatmul(long size) {
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 1;
+    int reps = 30;
     for (int i = 0; i < reps; i++) {
         dmatmul(C, A, B, rows, cols, cols);
     }
@@ -565,7 +565,7 @@ double time_matmul(long size) {
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 1;
+    int reps = 30;
     for (int i = 0; i < reps; i++) {
         matmul(C, A, B, rows, cols, cols);
     }
@@ -601,7 +601,7 @@ double time_imatmul(long size) {
     struct timespec start, stop;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int reps = 1;
+    int reps = 30;
     for (int i = 0; i < reps; i++) {
         imatmul(C, A, B, rows, cols, cols);
     }
@@ -1182,7 +1182,7 @@ int main() {
     printf("Starting Matrix Vector Benchmark\n");
     fprintf(csv_file,"Matrix Vector Benchmark\n");
 
-    for (i = 128; i <= 8192; i = i * 2) {
+    for (i = 8192; i <= 8192; i = i * 2) {
         printf("Number of Columns = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
         float_rep_time = time_mvmult(i);
@@ -1218,7 +1218,7 @@ int main() {
     printf("Starting 2D FFT Benchmark\n");
     fprintf(csv_file,"2D FFT Benchmark\n");
 
-    for (i = 128; i <= 8192; i = i * 2) {
+    for (i = 128; i <= 1024; i = i * 2) {
         printf("Number of Elements = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
         float_rep_time = time_fft2D(i);
@@ -1238,7 +1238,7 @@ int main() {
     printf("Starting Matrix Matrix (ATA) Benchmark\n");
     fprintf(csv_file,"Matrix Matrix (ATA) Benchmark\n");
 
-    for(i=128;i<=4096;i=i*2){
+    for(i=4096;i<=4096;i=i*2){
         printf("Number of Columns = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
         float_rep_time = time_ATA(i);
@@ -1256,7 +1256,7 @@ int main() {
     printf("Starting GEMM Benchmark\n");
     fprintf(csv_file,"GEMM Benchmark\n");
 
-    for(i=128;i<=4096;i=i*2){
+    for(i=128;i<=128*4;i=i*2){
         printf("n = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
         float_rep_time = time_matmul(i);
@@ -1293,7 +1293,7 @@ int main() {
     printf("Starting QR DCMP Benchmark\n");
     fprintf(csv_file,"QR DCMP Benchmark\n");
 
-    for(i=128;i<=128*16;i=i*2){
+    for(i=4096;i<=4096;i=i*2){
         printf("n = %d\n", i);
         double float_rep_time, double_rep_time, int_rep_time;
         float_rep_time = time_qrdcmp(i);
